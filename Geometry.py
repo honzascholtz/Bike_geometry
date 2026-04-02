@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 """
+creator - Jan Scholtz
 bike_geometry.py  –  Parse and plot bicycle frame geometry from a tab-separated file.
 
 Coordinate system (origin = Bottom Bracket centre):
     +x  →  toward front wheel
     +y  ↑  upward
-
-Usage:
-    python bike_geometry.py bike_gem.txt
 """
 
 import sys
@@ -50,9 +48,50 @@ PALETTE = {
     'ground'    : '#CCCCCC',
     'bg'        : '#F7F7F7',
 }
- 
+
 # ─────────────────────────────────────────────────────────────────────────────
-# Geometry file loader
+# Use functions
+# ─────────────────────────────────────────────────────────────────────────────
+def plot_geometry(path: str):
+
+    f, ax = plt.subplots(figsize=(10, 6))
+    geo = Geometry(path)
+
+    geo.plot_bike(f, ax)
+
+
+def plot_comparison(paths: list, colors=None, names=None):
+
+    if names is None:
+        names = [f"Bike {i+1}" for i in range(len(paths))]
+    if colors is None:
+        colors = ['blue', 'orange', 'green', 'purple', 'red', 'cyan', 'magenta', 'brown', 'olive', 'teal']
+        colors = colors[:len(paths)]
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    order = np.array([], dtype=int)
+
+    print(paths, names, colors)
+
+    for i, (p, c, name) in enumerate(zip(paths, colors,names)):
+        G = Geometry(p)
+    
+        fig = G.plot_comp(fig, ax, p, color=c)
+
+        ax.plot([], [], color=c, label=name)
+        
+        order= np.append(order, -i-1)
+
+
+    from matplotlib.legend_handler import HandlerTuple       
+    h, l = ax.get_legend_handles_labels()
+
+    ax.legend([h[i] for i in order], [l[i] for i in order],fontsize=15, ncol=3,
+            loc='upper left', columnspacing=0.5,bbox_to_anchor=(0.05, 1.2))
+
+    plt.show()
+# ─────────────────────────────────────────────────────────────────────────────
+# Geometry Class
 # ─────────────────────────────────────────────────────────────────────────────
 class Geometry():
     def __init__(self, path: str):
@@ -203,7 +242,7 @@ class Geometry():
     def _tube(self, ax, a, b, color, lw=6, label=None, zorder=3, ls='-'):
         ax.plot([a[0], b[0]], [a[1], b[1]],
                 color=color, lw=lw, solid_capstyle='round',
-                zorder=zorder, label=label, ls=ls)
+                zorder=zorder, ls=ls)
     
     
     def _ref(self, ax, p1, p2, color=None, ls='--'):
@@ -295,19 +334,19 @@ class Geometry():
             self._wheel(ax, axle, wheel_radius)
     
         # ── Frame tubes
-        self._tube(ax, self.points['bb'],             self.points['rear_axle'],      PALETTE['chainstay'], lw=8,  label='Chainstay')
-        self._tube(ax, self.points['rear_axle'],      self.points['ss_jn'],          PALETTE['seat_stay'], lw=7,  label='Seat stay')
-        self._tube(ax, self.points['bb'],             self.points['seat_frame_top'], PALETTE['seat_tube'], lw=8,  label='Seat tube')
-        self._tube(ax, self.points['seat_frame_top'], self.points['ht_top'],         PALETTE['top_tube'],  lw=7,  label='Top tube')
-        self._tube(ax, self.points['bb'],             self.points['ht_bottom'],      PALETTE['down_tube'], lw=7,  label='Down tube')
-        self._tube(ax, self.points['ht_top'],         self.points['ht_bottom'],      PALETTE['head_tube'], lw=12, label='Head tube')
-        self._tube(ax, self.points['ht_bottom'],      self.points['front_axle'],     PALETTE['fork'],      lw=7,  label='Fork')
-    
+        self._tube(ax, self.points['bb'],             self.points['rear_axle'],      PALETTE['chainstay'], lw=8)
+        self._tube(ax, self.points['rear_axle'],      self.points['ss_jn'],          PALETTE['seat_stay'], lw=7)
+        self._tube(ax, self.points['bb'],             self.points['seat_frame_top'], PALETTE['seat_tube'], lw=8)
+        self._tube(ax, self.points['seat_frame_top'], self.points['ht_top'],         PALETTE['top_tube'],  lw=7)
+        self._tube(ax, self.points['bb'],             self.points['ht_bottom'],      PALETTE['down_tube'], lw=7)
+        self._tube(ax, self.points['ht_top'],         self.points['ht_bottom'],      PALETTE['head_tube'], lw=12)
+        self._tube(ax, self.points['ht_bottom'],      self.points['front_axle'],     PALETTE['fork'],      lw=7)
+
         # ── Spacer stack (steerer above head tube, below stem)
-        self._tube(ax, self.points['ht_top'], self.points['spacer_top'], PALETTE['spacer'], lw=10, label='Spacers', zorder=8)
-    
+        self._tube(ax, self.points['ht_top'], self.points['spacer_top'], PALETTE['spacer'], lw=10, zorder=8)
+
         # ── Stem
-        self._tube(ax, self.points['stem_base'], self.points['stem_end'], PALETTE['stem'], lw=6, label='Stem', zorder=9)
+        self._tube(ax, self.points['stem_base'], self.points['stem_end'], PALETTE['stem'], lw=6, zorder=9)
     
         # ── Saddle & handlebar
         self._saddle(ax, self.points['seat_pos'], sa_rad)
@@ -437,16 +476,19 @@ class Geometry():
         # 15. Seat → handlebar / bar-tip distance
         self._ref(ax, self.points['seat_pos'], self.points['stem_end'], color=PALETTE['dim_green'], ls=':')
         mid = (self.points['seat_pos'] + self.points['stem_end']) / 2
+        print(f"Seat → bar tip (3-D)\n",
+            f"In-plane: {self.points['seat_to_bar_2d']:.0f} mm\n",
+            f"+ ½ bar:  {self.points['seat_to_bar_tip']:.0f} mm",)
         ax.annotate(
             f"Seat → bar tip (3-D)\n"
-            f"In-plane: {self.geo.get('Seat to bar 2D', 0):.0f} mm\n"
-            f"+ ½ bar:  {self.geo.get('Seat to bar tip', 0):.0f} mm",
+            f"In-plane: {self.points['seat_to_bar_2d']:.0f} mm\n"
+            f"+ ½ bar:  {self.points['seat_to_bar_tip']:.0f} mm",
             xy=tuple(mid),
             xytext=(mid[0] - 90, mid[1] + 90),
             fontsize=8.5, color=PALETTE['dim_green'], ha='center',
             bbox=dict(fc='white', ec=PALETTE['dim_green'],
                     boxstyle='round,pad=0.55', lw=1.3, alpha=0.94),
-            arrowprops=dict(arrowstyle='->', color=PALETTE['dim_green'], lw=1.2),
+            #arrowprops=dict(arrowstyle='->', color=PALETTE['dim_green'], lw=1.2),
             zorder=16,
         )
     
@@ -467,21 +509,6 @@ class Geometry():
                 f"Seat angle\n{self.geo['Seat Angle']:.1f}°",
                 fontsize=8.5, color=PALETTE['dim_red'], ha='right', zorder=10)
     
-        # ── Legend & axes
-        legend_handles = [
-            Line2D([0],[0], color=PALETTE['seat_tube'], lw=4, label='Seat tube'),
-            Line2D([0],[0], color=PALETTE['top_tube'],  lw=4, label='Top tube'),
-            Line2D([0],[0], color=PALETTE['down_tube'], lw=4, label='Down tube'),
-            Line2D([0],[0], color=PALETTE['head_tube'], lw=4, label='Head tube'),
-            Line2D([0],[0], color=PALETTE['chainstay'], lw=4, label='Chainstay'),
-            Line2D([0],[0], color=PALETTE['seat_stay'], lw=4, label='Seat stay'),
-            Line2D([0],[0], color=PALETTE['fork'],      lw=4, label='Fork'),
-            Line2D([0],[0], color=PALETTE['spacer'],    lw=4, label='Spacers'),
-            Line2D([0],[0], color=PALETTE['stem'],      lw=4, label='Stem'),
-            Line2D([0],[0], color=PALETTE['saddle'],    lw=4, label='Saddle / bars'),
-        ]
-        ax.legend(handles=legend_handles, loc='upper left', fontsize=9,
-                framealpha=0.9, title='Components', title_fontsize=9)
     
         ax.set_aspect('equal')
         ax.set_xlabel('mm   (x  →  toward front wheel)', fontsize=10, labelpad=8)
@@ -518,19 +545,19 @@ class Geometry():
             self._wheel(ax, axle, wheel_radius)
     
         # ── Frame tubes
-        self._tube(ax, self.points['bb'],             self.points['rear_axle'],      color, lw=8,  label='Chainstay')
-        self._tube(ax, self.points['rear_axle'],      self.points['ss_jn'],         color, lw=7,  label='Seat stay')
-        self._tube(ax, self.points['bb'],             self.points['seat_frame_top'], color, lw=8,  label='Seat tube')
-        self._tube(ax, self.points['seat_frame_top'], self.points['ht_top'],         color, lw=7,  label='Top tube')
-        self._tube(ax, self.points['bb'],             self.points['ht_bottom'],      color, lw=7,  label='Down tube')
-        self._tube(ax, self.points['ht_top'],         self.points['ht_bottom'],      color, lw=12, label='Head tube')
-        self._tube(ax, self.points['ht_bottom'],      self.points['front_axle'],     color,      lw=7,  label='Fork')
-    
+        self._tube(ax, self.points['bb'],             self.points['rear_axle'],      color, lw=8)
+        self._tube(ax, self.points['rear_axle'],      self.points['ss_jn'],         color, lw=7)
+        self._tube(ax, self.points['bb'],             self.points['seat_frame_top'], color, lw=8)
+        self._tube(ax, self.points['seat_frame_top'], self.points['ht_top'],         color, lw=7)
+        self._tube(ax, self.points['bb'],             self.points['ht_bottom'],      color, lw=7)
+        self._tube(ax, self.points['ht_top'],         self.points['ht_bottom'],      color, lw=12)
+        self._tube(ax, self.points['ht_bottom'],      self.points['front_axle'],     color, lw=7)
+
         # ── Spacer stack (steerer above head tube, below stem)
-        self._tube(ax, self.points['ht_top'], self.points['spacer_top'], color, lw=10, label='Spacers', zorder=8)
-    
+        self._tube(ax, self.points['ht_top'], self.points['spacer_top'], color, lw=10, zorder=8)
+
         # ── Stem
-        self._tube(ax, self.points['stem_base'], self.points['stem_end'], color, lw=6, label='Stem', zorder=9)
+        self._tube(ax, self.points['stem_base'], self.points['stem_end'], color, lw=6, zorder=9)
     
         # ── Saddle & handlebar
         self._saddle(ax, self.points['seat_pos'], sa_rad)
@@ -546,6 +573,134 @@ class Geometry():
         ax.set_ylabel('mm   (y  ↑  upward)', fontsize=10, labelpad=8)
         ax.grid(True, alpha=0.18, zorder=0)
         ax.tick_params(labelsize=9)
-    
+
         plt.tight_layout()
+        return fig
+
+    # ─────────────────────────────────────────────────────────────────────────────
+    # 3-D plot
+    # ─────────────────────────────────────────────────────────────────────────────
+
+    def plot_bike_3D(self, fig, ax, wheel_radius: int = WHEEL_RADIUS):
+        """
+        3-D view of the bike.
+
+        Coordinate system:
+            x  →  toward front wheel
+            y  ↑  upward
+            z  →  toward right (drive side)
+
+        The frame lives in the z = 0 plane.
+        Wheels are circles perpendicular to the x-axis.
+        Handlebars and saddle extend in ±z.
+        """
+
+        ax.set_facecolor(PALETTE['bg'])
+        fig.patch.set_facecolor(PALETTE['bg'])
+
+        sa_rad   = np.radians(self.geo['Seat Angle'])
+        half_bar = self.geo.get('Bar width', 420) / 2.0
+        saddle_hw = 65      # half lateral saddle width
+        bb_w      = 68      # standard road BB shell width
+
+        # ── Helper: 3-D tube
+        def tube3(a3, b3, color, lw=4):
+            ax.plot([a3[0], b3[0]], [a3[2], b3[2]], [a3[1], b3[1]],
+                    color=color, lw=lw, solid_capstyle='round')
+
+        # ── Helper: 2-D point → 3-D (z = 0 for frame plane)
+        def p3(pt2d, z=0.0):
+            return np.array([pt2d[0], pt2d[1], z])
+
+        # ── Helper: wheel circle in the plane x = cx
+        def wheel3(cx, axle_y, radius, n=120):
+            theta = np.linspace(0, 2 * np.pi, n)
+            zc = radius * np.cos(theta)
+            yc = axle_y + radius * np.sin(theta)
+            xc = np.full(n, cx)
+            ax.plot(xc, zc, yc, color=PALETTE['wheel_tyre'], lw=8, alpha=0.9)
+            rim_r = radius - 13
+            ax.plot(xc, rim_r * np.cos(theta), axle_y + rim_r * np.sin(theta),
+                    color=PALETTE['wheel_rim'], lw=1.5, alpha=0.7)
+            for a in np.linspace(0, 2 * np.pi, 16, endpoint=False):
+                ax.plot([cx, cx], [0, rim_r * np.cos(a)],
+                        [axle_y, axle_y + rim_r * np.sin(a)],
+                        color=PALETTE['spoke'], lw=0.5, alpha=0.5)
+
+        pts = self.points
+
+        # ── Ground plane
+        from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+        ground_y = pts['rear_axle'][1] - wheel_radius
+        x_l = pts['rear_axle'][0]  - wheel_radius - 100
+        x_r = pts['front_axle'][0] + wheel_radius + 100
+        z_w = wheel_radius * 0.45
+        ground_verts = [[(x_l, -z_w, ground_y), (x_r, -z_w, ground_y),
+                         (x_r,  z_w, ground_y), (x_l,  z_w, ground_y)]]
+        ground_poly = Poly3DCollection(ground_verts, alpha=0.45, facecolor='#D6D6D6', edgecolor='none')
+        ax.add_collection(ground_poly)
+
+        # ── Wheels
+        for axle in [pts['rear_axle'], pts['front_axle']]:
+            wheel3(axle[0], axle[1], wheel_radius)
+
+        # ── Frame tubes
+        frame_tubes = [
+            (pts['bb'],             pts['rear_axle'],      PALETTE['chainstay'], 6),
+            (pts['rear_axle'],      pts['ss_jn'],          PALETTE['seat_stay'], 5),
+            (pts['bb'],             pts['seat_frame_top'], PALETTE['seat_tube'], 6),
+            (pts['seat_frame_top'], pts['ht_top'],         PALETTE['top_tube'],  5),
+            (pts['bb'],             pts['ht_bottom'],      PALETTE['down_tube'], 5),
+            (pts['ht_top'],         pts['ht_bottom'],      PALETTE['head_tube'], 9),
+            (pts['ht_bottom'],      pts['front_axle'],     PALETTE['fork'],      5),
+        ]
+        for a2, b2, col, lw in frame_tubes:
+            tube3(p3(a2), p3(b2), col, lw=lw)
+
+        # ── Spacers & stem
+        tube3(p3(pts['ht_top']),    p3(pts['spacer_top']), PALETTE['spacer'], lw=8)
+        tube3(p3(pts['stem_base']), p3(pts['stem_end']),   PALETTE['stem'],   lw=5)
+
+        # ── BB shell (cylinder along z)
+        bb = pts['bb']
+        ax.plot([bb[0], bb[0]], [-bb_w / 2, bb_w / 2], [bb[1], bb[1]],
+                color=PALETTE['bb_shell'], lw=14, solid_capstyle='round')
+
+        # ── Handlebars (±z from stem_end)
+        se = pts['stem_end']
+        ax.plot([se[0], se[0]], [-half_bar, half_bar], [se[1], se[1]],
+                color=PALETTE['bar'], lw=7, solid_capstyle='round')
+        for z_bar in [-half_bar, half_bar]:
+            ax.scatter([se[0]], [z_bar], zs=[se[1]], color=PALETTE['bar'], s=80)
+
+        # ── Saddle platform (±z) and seatpost stub
+        sp = pts['seat_pos']
+        ax.plot([sp[0] - 120 * 0.35, sp[0] + 120 * 0.65],
+                [0, 0], [sp[1], sp[1]],
+                color=PALETTE['saddle'], lw=9, solid_capstyle='round')
+        ax.plot([sp[0], sp[0]], [-saddle_hw, saddle_hw], [sp[1], sp[1]],
+                color=PALETTE['saddle'], lw=5, solid_capstyle='round', alpha=0.7)
+        post_dir = np.array([-np.cos(sa_rad), np.sin(sa_rad)])
+        post_end = sp - 65 * post_dir
+        tube3(p3(sp), p3(post_end), '#555', lw=3)
+
+        # ── Axes & style
+        ax.set_xlabel('x  (→ front)', fontsize=9, labelpad=6)
+        ax.set_ylabel('z  (→ right)', fontsize=9, labelpad=6)
+        ax.set_zlabel('y  (↑ up)',    fontsize=9, labelpad=6)
+        ax.set_title('Bicycle Frame Geometry – 3-D View',
+                     fontsize=14, fontweight='bold', pad=14)
+
+        # Equal-ish aspect ratio
+        all_x = [pts['rear_axle'][0] - wheel_radius, pts['front_axle'][0] + wheel_radius]
+        all_y = [ground_y, pts['ht_top'][1] + 80]
+        max_range = max(all_x[1] - all_x[0], all_y[1] - all_y[0], 2 * half_bar) / 2
+        mid_x = (all_x[0] + all_x[1]) / 2
+        ax.set_xlim(mid_x - max_range, mid_x + max_range)
+        ax.set_ylim(-max_range, max_range)
+        ax.set_zlim(all_y[0], all_y[0] + 2 * max_range)
+
+        ax.grid(True, alpha=0.15)
+        ax.tick_params(labelsize=8)
+
         return fig
