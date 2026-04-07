@@ -36,6 +36,7 @@ PALETTE = {
     'bar'       : '#1A252F',
     'saddle'    : '#1A252F',
     'wheel_rim' : '#444444',
+    'wheel_rim' : "#000000",
     'wheel_tyre': '#1a1a1a',
     'spoke'     : '#aaaaaa',
     'bb_shell'  : '#cccccc',
@@ -275,14 +276,14 @@ class Geometry():
                                 color=PALETTE['wheel_tyre'], lw=14,
                                 fill=False, zorder=2))
         ax.add_patch(plt.Circle(centre, radius - 50, # type: ignore
-                                color=PALETTE['wheel_rim'], lw=1.8,
+                                color=PALETTE['wheel_rim'], lw=3,
                                 fill=False, zorder=2))
         angles = np.linspace(0, 2*np.pi, n_spokes, endpoint=False)
         for a in angles:
             spoke_end = centre + (radius - 50) * np.array([np.cos(a), np.sin(a)])
             ax.plot([centre[0], spoke_end[0]], [centre[1], spoke_end[1]],
                     color=PALETTE['spoke'], lw=0.5, zorder=2, alpha=0.6)
-        ax.add_patch(plt.Circle(centre, 18, color='#888', zorder=4)) # type: ignore
+        ax.add_patch(plt.Circle(centre, 20, color='#888', zorder=4)) # type: ignore
         ax.add_patch(plt.Circle(centre, 10, color=PALETTE['point'], zorder=5)) # type: ignore
     
     
