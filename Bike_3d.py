@@ -1,11 +1,11 @@
-import Geometry as G
+import FrameStack as FrS
 import matplotlib.pyplot as plt
 
-path = '/Users/jansen/Code/Cycling/Bike_geometry/Geometry_files/Canyon_Endurace_M.txt'
+path = '/Users/jansen/Code/Cycling/Bike_geometry/Geometry_files/Ribble_endurance_L.txt'
 
 f,ax = plt.subplots(1, figsize=(10,10))
 
-inst = G.Geometry(path)
+inst = FrS.FrameStack(path)
 inst.plot_bike_3D(f,ax)
 
 

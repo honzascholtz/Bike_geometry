@@ -56,7 +56,7 @@ PALETTE = {
 def plot_geometry(path: str):
 
     f, ax = plt.subplots(figsize=(10, 6))
-    geo = Geometry(path)
+    geo = FrameStack(path)
 
     geo.plot_bike(f, ax)
     return f,ax
@@ -76,7 +76,7 @@ def plot_comparison(paths: list, colors=None, names=None):
     print(paths, names, colors)
 
     for i, (p, c, name) in enumerate(zip(paths, colors,names)):
-        G = Geometry(p)
+        G = FrameStack(p)
     
         fig = G.plot_comp(fig, ax, p, color=c)
 
@@ -95,7 +95,7 @@ def plot_comparison(paths: list, colors=None, names=None):
 # ─────────────────────────────────────────────────────────────────────────────
 # Geometry Class
 # ─────────────────────────────────────────────────────────────────────────────
-class Geometry():
+class FrameStack():
     def __init__(self, path: str):
         self.path = path
         
