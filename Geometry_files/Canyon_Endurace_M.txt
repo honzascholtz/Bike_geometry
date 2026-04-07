@@ -10,8 +10,8 @@ Wheelbase	994
 Front Centre	609.5	
 BB Drop 	73
 Fork Rake / Offset	36.8	
-Seat height	770
+Seat height	720
 Stem length	90
 Stem Angle	6
 Bar width	400
-Spacers         70
+Spacers         50

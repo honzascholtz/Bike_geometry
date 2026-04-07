@@ -283,20 +283,20 @@ class Geometry():
         ax.add_patch(plt.Circle(centre, 10, color=PALETTE['point'], zorder=5)) # type: ignore
     
     
-    def _saddle(self, ax, pos, sa_rad, saddle_w=120):
+    def _saddle(self, ax, pos, sa_rad, saddle_w=120, color='k'):
         """Simplified saddle: platform + seatpost stub."""
         sx, sy = pos
         # Saddle platform (horizontal, slightly forward-biased)
         ax.plot([sx - saddle_w*0.35, sx + saddle_w*0.65], [sy, sy],
-                color=PALETTE['saddle'], lw=9, solid_capstyle='round', zorder=10)
+                color=color, lw=9, solid_capstyle='round', zorder=10)
         # Seatpost stub downward along seat-tube direction
         post_dir = np.array([-np.cos(sa_rad), np.sin(sa_rad)])
         post_end = pos - 65 * post_dir
         ax.plot([sx, post_end[0]], [sy, post_end[1]],
-                color='#555', lw=3.5, zorder=9)
+                color=color, lw=3.5, zorder=9)
         # Centre dot
         ax.plot(sx, sy, 'o', ms=7, color='white',          zorder=11)
-        ax.plot(sx, sy, 'o', ms=3.5, color=PALETTE['saddle'], zorder=12)
+        ax.plot(sx, sy, 'o', ms=3.5, color=color, zorder=12)
     
     
     def _handlebar(self, ax, centre):
@@ -565,7 +565,7 @@ class Geometry():
         self._tube(ax, self.points['stem_base'], self.points['stem_end'], color, lw=6, zorder=9)
     
         # ── Saddle & handlebar
-        self._saddle(ax, self.points['seat_pos'], sa_rad)
+        self._saddle(ax, self.points['seat_pos'], sa_rad, color=color)
         self._handlebar(ax, self.points['bar_centre'])
     
         # ── BB shell
